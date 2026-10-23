@@ -1,0 +1,31 @@
+name: Container build validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-only:
+    name: Build security testing container (no publish)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build container image without publishing
+        run: docker build --pull --tag sentinel-ci:${GITHUB_SHA} docker/
+
+      - name: Confirm image metadata
+        run: docker image inspect sentinel-ci:${GITHUB_SHA} --format '{{.Id}} {{.Os}}/{{.Architecture}}'
