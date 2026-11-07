@@ -208,7 +208,7 @@ cd MITM_Fuzz_Render && make dist   # 产出 dist/replayd_linux_{amd64,arm64}
 
 **但容器只约束命令，不是整体沙箱**：控制台与 Agent 进程本身以启动者的用户身份跑在宿主机上，只有命令进容器。
 
-- 审批链只覆盖 bash、安卓 shell（`droid_shell`）与 iOS shell（`ios_shell`），子代理的 bash 走同一条链；**read/edit/write、文件面板、MCP 工具、codemode，以及 frida、抓包、APK 分析等直接调用容器的工具都不过门**。工程任务的 bash 另有一套正则黑名单、20 秒超时与 40 条预算，同样不走审批门。
+- 审批链只覆盖 bash、安卓 shell（`droid_shell`）与 iOS shell（`ios_shell`），子代理的 bash 走同一条链；**read/edit/write、文件面板、codemode，以及 frida、抓包、APK 分析等直接调用容器的工具都不过门**；MCP 与插件工具在 AI 审批模式默认过守门员，审批模式和自动执行模式不做 MCP 判定。工程任务的 bash 另有一套正则黑名单、20 秒超时与 40 条预算，同样不走审批门。
 - `read/edit/write` 直接读写宿主机文件系统，项目目录只是相对路径的基准，绝对路径不受限制；MCP 的 stdio 服务器是宿主机子进程。
 - AI 审批（守门模型）只判六类破坏性操作，判定失败、超时或无法解析一律阻止本次调用（fail-closed），**不是沙箱、也不做数据防泄漏**。
 - 容器以 root 运行，没有资源上限，也没有 cap-drop / seccomp / read-only；同一项目的所有会话与并发任务共用一个容器。
