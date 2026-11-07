@@ -69,7 +69,7 @@ Download `sentinel-web-windows-x64.zip` from Releases (recommended) or the singl
 
 `replayd/` holds the Linux binaries of the packet-replay service that the console pushes into the project containers on first use, so they must sit next to the executable. The bare `.exe` also runs: the replay toolset then reports that it cannot find the binary — drop `replayd/` next to the exe, or point `SENTINEL_REPLAYD_DIR` at its directory.
 
-The executable is unsigned, so SmartScreen may block it once; choose "More info → Run anyway". Windows does not include `openssl` by default, so the first start falls back to plaintext HTTP and logs a warning. To keep HTTPS, install OpenSSL or provide certificates with `--tls-cert/--tls-key`. Containers use host networking by default; if Docker Desktop does not support host networking, switch to bridge networking under Settings → Environment and recreate the containers.
+The executable is unsigned, so SmartScreen may block it once; choose "More info → Run anyway". Windows does not include `openssl` by default, so the first start falls back to plaintext HTTP and logs a warning. To keep HTTPS, install OpenSSL or provide certificates with `--tls-cert/--tls-key`. Containers use bridge networking by default. Switch explicitly to host networking under Settings → Environment only when an authorized test requires reverse callbacks or host-network access.
 
 **Windows notes:** running the console on Windows is not recommended. Install [Win32OpenSSL](https://slproweb.com/products/Win32OpenSSL.html) and add `C:\Program Files\Git\usr\bin\` to the system `PATH`; otherwise HTTPS access will not work reliably.
 
