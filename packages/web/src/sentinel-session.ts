@@ -1309,7 +1309,7 @@ export class SentinelRuntime {
 							return operations.exec(command, commandCwd, options);
 						}
 						return Promise.reject(
-							new Error(outcome.kind === "block" ? outcome.message : "Command not executed: aborted"),
+							new Error(outcome.kind === "block" ? outcome.message : outcome.kind === "failed" ? t("守门模型不可用，已按 fail-closed 策略阻止执行") : "Command not executed: aborted"),
 						);
 					});
 			},
