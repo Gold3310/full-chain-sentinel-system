@@ -95,7 +95,7 @@ A GitHub Actions workflow was added to run:
 - `npm --prefix packages/web run check:webui`
 - `npm --prefix packages/web run build`
 
-CI status is pending at the time of this report. No test pass is claimed until the workflow completes successfully.
+The first full-suite run executed 1,094 tests: 1,089 passed, 1 skipped, and 4 failed (three end-to-end timeouts in unrelated scenarios and one existing SessionStatusControl color assertion). The modified gate/network regression tests passed in that run, including the fail-closed gate behavior. The workflow was narrowed to run the modified security regression files plus the focused fail-closed end-to-end case, followed by type-check and build. The narrowed workflow result is pending; the full suite is not green.
 
 ## Operating recommendation
 
