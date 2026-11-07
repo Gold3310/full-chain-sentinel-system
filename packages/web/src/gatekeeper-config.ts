@@ -33,15 +33,15 @@ export const MAX_CONCURRENCY = 64;
  * The default is the operator-approval mode: the console starts with the mode
  * that asks a human, never one that acts on its own.
  *
- * MCP judging is on by default but plugins are not: the request was "默认只守门
- * MCP", and plugin tools are the noisy ones — a single plugin can expose dozens
- * of tools, each costing a judgment. Both switches live in 设置 → 模型.
+ * MCP and plugin-tool judging are on by default so plugin execution cannot
+ * silently bypass AI approval. Operators may explicitly disable plugin judging
+ * in 设置 → 模型 when they accept that risk.
  */
 const DEFAULT_CONFIG: SentinelGatekeeperConfig = {
 	mode: "review",
 	timeoutMs: DEFAULT_TIMEOUT_MS,
 	concurrency: DEFAULT_CONCURRENCY,
-	mcpTools: { enabled: true, includePlugins: false },
+	mcpTools: { enabled: true, includePlugins: true },
 };
 
 export function gatekeeperJsonPath(agentDir: string): string {

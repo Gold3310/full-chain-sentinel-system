@@ -1303,14 +1303,13 @@ export class SentinelRuntime {
 						...(options?.signal ? { signal: options.signal } : {}),
 					})
 					.then((outcome) => {
-						// A judgment that never arrived is allowed through: an unattended run
-						// must not stall because the judge endpoint is down. The audit page and
-						// the console banner are what make that visible.
-						if (outcome.kind === "allow" || outcome.kind === "failed") {
+						// A judgment that never arrived is blocked. An unavailable judge must never
+						// turn AI approval into automatic execution.
+						if (outcome.kind === "allow") {
 							return operations.exec(command, commandCwd, options);
 						}
 						return Promise.reject(
-							new Error(outcome.kind === "block" ? outcome.message : "Command not executed: aborted"),
+							new Error(outcome.kind === "block" ? outcome.message : outcome.kind === "failed" ? t("守门模型不可用，已按 fail-closed 策略阻止执行") : "Command not executed: aborted"),
 						);
 					});
 			},
@@ -2772,8 +2771,8 @@ export class SentinelRuntime {
 				sessionId: managed.manager.getSessionId(),
 			})
 			.then((outcome) => {
-				if (outcome.kind === "allow" || outcome.kind === "failed") return command;
-				throw new Error(outcome.kind === "block" ? outcome.message : t("已中止"));
+				if (outcome.kind === "allow") return command;
+				throw new Error(outcome.kind === "block" ? outcome.message : outcome.kind === "failed" ? t("守门模型不可用，已按 fail-closed 策略阻止执行") : t("已中止"));
 			});
 	}
 
@@ -2876,8 +2875,8 @@ export class SentinelRuntime {
 				sessionId: managed.manager.getSessionId(),
 			})
 			.then((outcome) => {
-				if (outcome.kind === "allow" || outcome.kind === "failed") return payload;
-				throw new Error(outcome.kind === "block" ? outcome.message : t("已中止"));
+				if (outcome.kind === "allow") return payload;
+				throw new Error(outcome.kind === "block" ? outcome.message : outcome.kind === "failed" ? t("守门模型不可用，已按 fail-closed 策略阻止执行") : t("已中止"));
 			});
 	}
 
@@ -3029,8 +3028,8 @@ export class SentinelRuntime {
 				sessionId: managed.manager.getSessionId(),
 			})
 			.then((outcome) => {
-				if (outcome.kind === "allow" || outcome.kind === "failed") return command;
-				throw new Error(outcome.kind === "block" ? outcome.message : t("已中止"));
+				if (outcome.kind === "allow") return command;
+				throw new Error(outcome.kind === "block" ? outcome.message : outcome.kind === "failed" ? t("守门模型不可用，已按 fail-closed 策略阻止执行") : t("已中止"));
 			});
 	}
 

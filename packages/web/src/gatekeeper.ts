@@ -16,8 +16,8 @@
  *   that reasons about what a command might be the first step of will block
  *   reconnaissance.
  * - A judgment that fails (timeout, endpoint error, unparseable answer) is
- *   allowed through and recorded as `failed`. An unattended run must not stall
- *   because the judge endpoint is down; the console shows a banner instead.
+ *   recorded as `failed` and the guarded operation is blocked by every execution
+ *   entry point. The console shows a banner; it never degrades to automatic execution.
  * - A missing endpoint is a different thing and refuses the mode outright
  *   (see the settings screen). Silently degrading to `auto` is the one outcome
  *   worse than stopping.
@@ -364,7 +364,7 @@ export class Gatekeeper {
 		this.lastError = stats.lastError;
 	}
 
-	/** Judgments that failed and were allowed through, for the console banner. */
+	/** Failed judgments that blocked guarded operations, for the console banner. */
 	health(): {
 		failures: number;
 		lastFailureAt: number | null;
@@ -478,7 +478,7 @@ export class Gatekeeper {
 		}
 	}
 
-	/** Record a judgment that could not be produced; the command is allowed through. */
+	/** Record a judgment that could not be produced; callers must block the operation. */
 	private finishFailure(
 		base: Omit<GateDecisionInput, "decision" | "latencyMs">,
 		error: string,

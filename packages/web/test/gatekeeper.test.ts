@@ -92,7 +92,7 @@ describe("parseGateVerdict", () => {
 		});
 	});
 
-	test("throws on prose and on an empty answer, so the caller fails open", () => {
+	test("throws on prose and on an empty answer, so the caller blocks", () => {
 		for (const raw of ["", "   ", "这条命令看起来可以放行", "I cannot judge this", "BLOCKEDX"]) {
 			expect(() => parseGateVerdict(raw)).toThrow();
 		}
@@ -260,7 +260,7 @@ describe("Gatekeeper.guard", () => {
 		expect(seen).not.toContain("命令：");
 	});
 
-	test("allows through and records a failure when the endpoint errors", async () => {
+	test("returns a failed outcome when the endpoint errors; execution callers must block", async () => {
 		writeTestModel(agentDir, { baseUrl: "http://judge/v1", apiKey: "", modelId: "judge-stub" }, "judge");
 		const gatekeeper = newGatekeeper();
 		gatekeeper.call = async () => {
@@ -273,7 +273,7 @@ describe("Gatekeeper.guard", () => {
 		expect(record.error).toContain("boom");
 	});
 
-	test("allows through and records a failure when the answer is unparseable", async () => {
+	test("returns a failed outcome when the answer is unparseable; execution callers must block", async () => {
 		writeTestModel(agentDir, { baseUrl: "http://judge/v1", apiKey: "", modelId: "judge-stub" }, "judge");
 		const gatekeeper = newGatekeeper();
 		stubAnswer(gatekeeper, "我觉得这条命令没问题");

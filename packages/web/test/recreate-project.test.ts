@@ -43,8 +43,8 @@ test("rebuilding replaces the container with the stored network and keeps the pr
 	expect(added.error).toBeUndefined();
 	const project = listProjects(agentDir).projects[0];
 	if (!project) throw new Error("项目未创建");
-	// A fresh install defaults to host mode.
-	expect(calls(logPath).find((line) => line.startsWith("run"))).toContain("--network host");
+	// A fresh install defaults to bridge mode.
+	expect(calls(logPath).find((line) => line.startsWith("run"))).toContain("--network bridge");
 
 	writeContainerNetwork(agentDir, "bridge");
 	const recreated = await recreateProject(agentDir, project.id);

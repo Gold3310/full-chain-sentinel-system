@@ -1,7 +1,9 @@
 /**
  * How a project container joins the network.
  *
- * Host mode is the default. The container shares the host's network namespace, so
+ * Bridge mode is the default and keeps Docker network isolation. Host mode can be
+ * enabled explicitly for authorized reverse-shell workflows, but shares the host's
+ * network namespace, so
  * a listener started inside it — a reverse shell, a payload server, a handler — is
  * reachable by the target at the host's address, `127.0.0.1` inside the container
  * means the host's loopback (Burp, a local range, the console itself), and the
@@ -11,14 +13,14 @@
  * why nothing outside the host can connect back into it.
  *
  * Stored in `<agentDir>/container-network.json`. A missing or malformed file means
- * host, which is what the environment page shows.
+ * bridge, the safer default.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { SentinelContainerNetwork } from "./protocol.ts";
 
-export const DEFAULT_CONTAINER_NETWORK: SentinelContainerNetwork = "host";
+export const DEFAULT_CONTAINER_NETWORK: SentinelContainerNetwork = "bridge";
 
 export function containerNetworkPath(agentDir: string): string {
 	return join(agentDir, "container-network.json");
@@ -26,7 +28,7 @@ export function containerNetworkPath(agentDir: string): string {
 
 /** A JSON file can hold anything; only the two known modes are accepted. */
 export function normalizeContainerNetwork(value: unknown): SentinelContainerNetwork {
-	return value === "bridge" ? "bridge" : DEFAULT_CONTAINER_NETWORK;
+	return value === "host" ? "host" : DEFAULT_CONTAINER_NETWORK;
 }
 
 export function readContainerNetwork(agentDir: string): SentinelContainerNetwork {

@@ -107,7 +107,7 @@ describe("shouldJudgeTool", () => {
 		expect(shouldJudgeTool({ toolName: "mcp__files__read_file", mode: "ai", config })).toBe(false);
 	});
 
-	test("plugins need the second switch, custom MCP servers do not", () => {
+	test("plugin tools are judged by default and can be explicitly disabled", () => {
 		const config = { ...CONFIG, mcpTools: { enabled: true, includePlugins: false } };
 		expect(shouldJudgeTool({ toolName: "mcp__files__read_file", mode: "ai", config })).toBe(true);
 		expect(
@@ -183,7 +183,7 @@ describe("createToolGateExtension", () => {
 		expect(outcome?.reason).toContain("删除业务数据");
 	});
 
-	test("allows through when the judge fails, and records the failure", async () => {
+	test("blocks when the judge fails, and records the failure", async () => {
 		const { gatekeeper } = stubbed();
 		gatekeeper.call = async () => {
 			throw new Error("端点返回 500");
@@ -192,7 +192,8 @@ describe("createToolGateExtension", () => {
 			toolName: "mcp__files__read_file",
 			input: { path: "/etc/hosts" },
 		});
-		expect(outcome).toBeUndefined();
+		expect(outcome?.block).toBe(true);
+		expect(outcome?.reason).toContain("fail-closed");
 		expect(store.list(undefined).items[0].decision).toBe("failed");
 	});
 

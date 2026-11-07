@@ -17,9 +17,9 @@
  * - The decision is read per call, never captured when the session is built. The
  *   operator flipping the switch in 设置 → 模型 applies to sessions that are
  *   already open, which is the same promise the bash gate makes about modes.
- * - A failed judgment is allowed through, exactly like bash: an unattended run
- *   must not lose a plugin because the judge endpoint is down. The audit page
- *   records it as 「请求失败」.
+ * - A failed judgment is blocked. The gate is not an availability fallback: if
+ *   the judge is unavailable, the tool call does not execute. The audit page
+ *   records the failed judgment for the operator.
  */
 
 import type { ExtensionFactory } from "@earendil-works/pi-coding-agent";
@@ -124,9 +124,15 @@ export function createToolGateExtension(options: {
 				projectName: options.context.projectName,
 				sessionId: options.context.sessionId(),
 			});
-			// `allow` and `failed` both run: a missing verdict is not a block.
-			if (outcome.kind !== "block") return undefined;
-			return { block: true, reason: outcome.message };
+			if (outcome.kind === "allow") return undefined;
+			if (outcome.kind === "block") return { block: true, reason: outcome.message };
+			return {
+				block: true,
+				reason:
+					outcome.kind === "failed"
+						? "守门模型不可用；已按 fail-closed 策略阻止工具调用。"
+						: "守门判定已中止；工具调用未执行。",
+			};
 		});
 	};
 }

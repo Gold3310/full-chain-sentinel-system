@@ -2240,7 +2240,7 @@ test("a compaction that stalls is visible, refuses prompts in Chinese, and can b
  *
  * The judge is the same fake endpoint, recognized by its system prompt, so a
  * test can steer the verdict per command. Every scenario below runs exactly one
- * bash command through the real gate: allow, block, and fail-open.
+ * bash command through the real gate: allow, block, and fail-closed.
  */
 
 /**
@@ -2418,22 +2418,24 @@ test("a blocked command never runs, the reason reaches the model, and the block 
 	expect(settled.gatekeeper.lastSuccessAt ?? 0).toBeGreaterThan(settled.gatekeeper.lastFailureAt ?? 0);
 });
 
-test("a judge failure is allowed through, recorded as 请求失败, and surfaces as fail-open", async () => {
+test("a judge failure blocks the command, records 请求失败, and surfaces as fail-closed", async () => {
 	judgeBehavior = { kind: "error" };
 	judgedCommands.length = 0;
 	drainIncoming();
 	send({ type: "prompt", text: GATE_FAIL_PROMPT });
-	const settled = await snapshotWhereFirst(
-		(snapshot) => !snapshot.streaming && toolResultText(snapshot).includes(GATE_FAILED_OUTPUT),
-	);
-	// Fail-open: the command ran even though no verdict came back.
+	// The audit record is written before the blocked tool result returns to the
+	// model, so inspect it directly instead of waiting for the model to finish.
+	const page = await auditPage({ decision: "failed" });
+	const record = page.items.find((item) => item.command.includes(GATE_FAILED_COMMAND));
+	send({ type: "get_state" });
+	const settled = await snapshotWhereFirst((snapshot) => snapshot.gatekeeper.failures > 0);
+	// Fail-closed: a recorded judge failure is enough to establish that no ALLOW
+	// verdict existed. The command output marker must never appear.
+	expect(toolResultText(settled)).not.toContain(GATE_FAILED_OUTPUT);
 	expect(settled.gatekeeper.failures).toBeGreaterThan(0);
 	expect(settled.gatekeeper.lastError).toContain("500");
 	// Newer failure than success is what raises the console's yellow banner.
 	expect(settled.gatekeeper.lastFailureAt ?? 0).toBeGreaterThan(settled.gatekeeper.lastSuccessAt ?? 0);
-
-	const page = await auditPage({ decision: "failed" });
-	const record = page.items.find((item) => item.command.includes(GATE_FAILED_COMMAND));
 	expect(record?.decision).toBe("failed");
 	// A failure keeps the endpoint's own words; `reason` is the block slot.
 	expect(record?.error).toContain("500");
