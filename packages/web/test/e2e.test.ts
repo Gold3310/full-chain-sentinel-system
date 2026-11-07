@@ -2423,9 +2423,12 @@ test("a judge failure blocks the command, records 请求失败, and surfaces as 
 	judgedCommands.length = 0;
 	drainIncoming();
 	send({ type: "prompt", text: GATE_FAIL_PROMPT });
-	const settled = await snapshotWhereFirst(
-		(snapshot) => snapshot.gatekeeper.failures > 0 && (snapshot.gatekeeper.lastError ?? "").includes("500"),
-	);
+	// The audit record is written before the blocked tool result returns to the
+	// model, so inspect it directly instead of waiting for the model to finish.
+	const page = await auditPage({ decision: "failed" });
+	const record = page.items.find((item) => item.command.includes(GATE_FAILED_COMMAND));
+	send({ type: "get_state" });
+	const settled = await snapshotWhereFirst((snapshot) => snapshot.gatekeeper.failures > 0);
 	// Fail-closed: a recorded judge failure is enough to establish that no ALLOW
 	// verdict existed. The command output marker must never appear.
 	expect(toolResultText(settled)).not.toContain(GATE_FAILED_OUTPUT);
@@ -2433,9 +2436,6 @@ test("a judge failure blocks the command, records 请求失败, and surfaces as 
 	expect(settled.gatekeeper.lastError).toContain("500");
 	// Newer failure than success is what raises the console's yellow banner.
 	expect(settled.gatekeeper.lastFailureAt ?? 0).toBeGreaterThan(settled.gatekeeper.lastSuccessAt ?? 0);
-
-	const page = await auditPage({ decision: "failed" });
-	const record = page.items.find((item) => item.command.includes(GATE_FAILED_COMMAND));
 	expect(record?.decision).toBe("failed");
 	// A failure keeps the endpoint's own words; `reason` is the block slot.
 	expect(record?.error).toContain("500");
