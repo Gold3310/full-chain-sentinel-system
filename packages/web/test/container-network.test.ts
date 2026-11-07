@@ -38,7 +38,7 @@ test("a missing or malformed setting means bridge", () => {
 	expect(DEFAULT_CONTAINER_NETWORK).toBe("bridge");
 	expect(readContainerNetwork(root)).toBe("bridge");
 	writeFileSync(containerNetworkPath(root), "{ not json");
-	expect(readContainerNetwork(root)).toBe("host");
+	expect(readContainerNetwork(root)).toBe("bridge");
 	writeFileSync(containerNetworkPath(root), JSON.stringify({ network: "whatever" }));
 	expect(readContainerNetwork(root)).toBe("bridge");
 	expect(normalizeContainerNetwork(undefined)).toBe("bridge");
