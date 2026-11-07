@@ -1,0 +1,44 @@
+name: Sentinel Security Hardening
+
+on:
+  push:
+    branches:
+      - security-hardening/fail-closed-bridge-default-2026-11-07
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "packages/web/src/**"
+      - "packages/web/test/**"
+      - "packages/web/package.json"
+      - "package.json"
+      - "package-lock.json"
+      - "README.md"
+      - "README.en.md"
+
+permissions:
+  contents: read
+
+jobs:
+  web-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.19.0"
+
+      - name: Install locked workspace dependencies
+        run: npm ci
+
+      - name: Run web console tests
+        run: npm --prefix packages/web test
+
+      - name: Type-check web UI
+        run: npm --prefix packages/web run check:webui
+
+      - name: Build web console
+        run: npm --prefix packages/web run build
