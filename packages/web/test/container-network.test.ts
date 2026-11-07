@@ -33,15 +33,15 @@ function tempDir(): string {
 	return root;
 }
 
-test("a missing or malformed setting means host", () => {
+test("a missing or malformed setting means bridge", () => {
 	const root = tempDir();
-	expect(DEFAULT_CONTAINER_NETWORK).toBe("host");
-	expect(readContainerNetwork(root)).toBe("host");
+	expect(DEFAULT_CONTAINER_NETWORK).toBe("bridge");
+	expect(readContainerNetwork(root)).toBe("bridge");
 	writeFileSync(containerNetworkPath(root), "{ not json");
 	expect(readContainerNetwork(root)).toBe("host");
 	writeFileSync(containerNetworkPath(root), JSON.stringify({ network: "whatever" }));
-	expect(readContainerNetwork(root)).toBe("host");
-	expect(normalizeContainerNetwork(undefined)).toBe("host");
+	expect(readContainerNetwork(root)).toBe("bridge");
+	expect(normalizeContainerNetwork(undefined)).toBe("bridge");
 	expect(normalizeContainerNetwork("bridge")).toBe("bridge");
 	expect(normalizeContainerNetwork("host")).toBe("host");
 });
