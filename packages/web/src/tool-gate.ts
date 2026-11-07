@@ -17,9 +17,9 @@
  * - The decision is read per call, never captured when the session is built. The
  *   operator flipping the switch in 设置 → 模型 applies to sessions that are
  *   already open, which is the same promise the bash gate makes about modes.
- * - A failed judgment is allowed through, exactly like bash: an unattended run
- *   must not lose a plugin because the judge endpoint is down. The audit page
- *   records it as 「请求失败」.
+ * - A failed judgment is blocked. The gate is not an availability fallback: if
+ *   the judge is unavailable, the tool call does not execute. The audit page
+ *   records the failed judgment for the operator.
  */
 
 import type { ExtensionFactory } from "@earendil-works/pi-coding-agent";
