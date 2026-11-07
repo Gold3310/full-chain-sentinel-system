@@ -124,9 +124,15 @@ export function createToolGateExtension(options: {
 				projectName: options.context.projectName,
 				sessionId: options.context.sessionId(),
 			});
-			// `allow` and `failed` both run: a missing verdict is not a block.
-			if (outcome.kind !== "block") return undefined;
-			return { block: true, reason: outcome.message };
+			if (outcome.kind === "allow") return undefined;
+			if (outcome.kind === "block") return { block: true, reason: outcome.message };
+			return {
+				block: true,
+				reason:
+					outcome.kind === "failed"
+						? "守门模型不可用；已按 fail-closed 策略阻止工具调用。"
+						: "守门判定已中止；工具调用未执行。",
+			};
 		});
 	};
 }
