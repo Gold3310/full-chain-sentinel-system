@@ -66,7 +66,7 @@ describe("normalizeGatekeeperConfig", () => {
 	test("ignores non-boolean switches instead of coercing them", () => {
 		expect(normalizeGatekeeperConfig({ mcpTools: { enabled: "yes", includePlugins: 1 } }).mcpTools).toEqual({
 			enabled: true,
-			includePlugins: false,
+			includePlugins: true,
 		});
 	});
 
