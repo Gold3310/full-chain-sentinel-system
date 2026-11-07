@@ -364,7 +364,7 @@ export class Gatekeeper {
 		this.lastError = stats.lastError;
 	}
 
-	/** Judgments that failed and were allowed through, for the console banner. */
+	/** Failed judgments that blocked guarded operations, for the console banner. */
 	health(): {
 		failures: number;
 		lastFailureAt: number | null;
