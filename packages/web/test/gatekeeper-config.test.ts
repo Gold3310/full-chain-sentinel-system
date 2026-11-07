@@ -38,8 +38,8 @@ describe("normalizeGatekeeperConfig", () => {
 				mode: "review",
 				timeoutMs: DEFAULT_TIMEOUT_MS,
 				concurrency: DEFAULT_CONCURRENCY,
-				// 默认只守门 MCP：MCP 工具判定打开，插件工具不纳入。
-				mcpTools: { enabled: true, includePlugins: false },
+				// Fail closed across custom MCP and plugin-host tools by default.
+				mcpTools: { enabled: true, includePlugins: true },
 			});
 		}
 	});
@@ -47,7 +47,7 @@ describe("normalizeGatekeeperConfig", () => {
 	test("a file from before the MCP switches reads as the defaults", () => {
 		expect(normalizeGatekeeperConfig({ mode: "ai", timeoutMs: 9000 }).mcpTools).toEqual({
 			enabled: true,
-			includePlugins: false,
+			includePlugins: true,
 		});
 	});
 
@@ -96,7 +96,7 @@ describe("normalizeGatekeeperConfig", () => {
 });
 
 describe("read and write", () => {
-	const MCP_ONLY = { enabled: true, includePlugins: false };
+	const MCP_ONLY = { enabled: true, includePlugins: true };
 
 	test("a fresh agent dir reads as the defaults", () => {
 		expect(readGatekeeperConfig(agentDir)).toEqual({
