@@ -1,8 +1,8 @@
 /**
  * Container network mode: the stored setting and the `docker run` flags it becomes.
  *
- * These pin the decisions with consequences. Host is the default, so a fresh
- * install can receive a reverse shell and see the real LAN. NET_ADMIN is granted
+ * These pin the decisions with consequences. Bridge is the default and keeps
+ * the host network namespace isolated unless the operator explicitly opts in. NET_ADMIN is granted
  * only in bridge mode, where it is confined to the container's own namespace —
  * in host mode the same capability would reach the host's interfaces and routes.
  * `host.docker.internal` is pinned in both modes, because the name only resolves by
