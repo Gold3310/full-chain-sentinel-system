@@ -19,8 +19,8 @@
 
 - **方法论驱动的渗透流程**：侦察 → 枚举 → 漏洞映射 → 验证 → 利用 → 后渗透 → 报告，系统提示强调授权范围、证据留痕与最小侵入。
 - **中英文 Web 控制台**（[packages/web](packages/web/README.md)）：默认中文，可在侧栏、登录页与授权承诺页切换英文；服务端提示、错误和报告同步英文化。流式对话与思考过程、工具执行卡片、会话树、文件与子代理弹窗、项目选择。
-- **三档执行模式**：审批模式（默认，每条 bash 命令可编辑后放行或拒绝）、自动执行、AI 审批（守门模型逐条判定 `ALLOW` / `BLOCK`，判定失败或超时一律放行）。审批链覆盖 bash、安卓 shell 命令（`droid_shell`）与 iOS shell（`ios_shell`）；frida、抓包、APK 分析与文件面板直接调用容器，不过审批门。
-- **容器化作业环境**：每个项目一个 Kali 容器，内置侦察、枚举、Web 利用、口令与内网工具；容器网络模式在「设置 → 环境」切换（默认 host）。
+- **三档执行模式**：审批模式（默认，每条 bash 命令可编辑后放行或拒绝）、自动执行、AI 审批（守门模型逐条判定 `ALLOW` / `BLOCK`，判定失败或超时阻止本次调用，fail-closed；MCP 与插件工具默认纳入判定）。审批链覆盖 bash、安卓 shell 命令（`droid_shell`）与 iOS shell（`ios_shell`）；frida、抓包、APK 分析与文件面板直接调用容器，不过审批门。
+- **容器化作业环境**：每个项目一个 Kali 容器，内置侦察、枚举、Web 利用、口令与内网工具；容器网络模式在「设置 → 环境」切换（默认 bridge；host 需显式开启）。
 - **漏洞中枢**：`vuln_submit` 提交已验证漏洞，必填 CVSS 分数，原始数据包逐字保存，操作员复核留时间线，可按项目导出 Markdown 报告。
 - **业务建模与 POC 库**：把目标站点还原成 OpenAPI 3.0 文档；Nuclei POC 订阅、检索与引用。
 - **安卓设备插件**：root 测试机安装自研 DroidBridge APK 主动反连，提供 shell、文件上下行、截屏、logcat、tcpdump 抓包、frida 动态调试与 APK 静态分析。
@@ -70,7 +70,7 @@ Windows（需要 Docker Desktop，PowerShell 中运行）：
 
 `replayd/` 里是发包重放服务给容器用的 Linux 二进制：控制台首次在项目容器里用到「发包」时会把它下发进容器，所以要放在可执行文件旁边。只想要单文件时下载裸 `.exe` 也行，但发包功能会提示找不到二进制——这时把 `replayd/` 放到 exe 同级目录，或用 `SENTINEL_REPLAYD_DIR` 指向它的所在目录。
 
-该文件未签名，SmartScreen 可能拦一次，选择「更多信息 → 仍要运行」即可。Windows 默认没有 `openssl`，首次启动会回退到明文 HTTP 并在日志里提示；要保留 HTTPS，安装 OpenSSL，或用 `--tls-cert/--tls-key` 指定证书。容器默认用 host 网络，如果本机 Docker Desktop 不支持 host 网络，在「设置 → 环境」切到桥接后重建容器。
+该文件未签名，SmartScreen 可能拦一次，选择「更多信息 → 仍要运行」即可。Windows 默认没有 `openssl`，首次启动会回退到明文 HTTP 并在日志里提示；要保留 HTTPS，安装 OpenSSL，或用 `--tls-cert/--tls-key` 指定证书。容器默认用 bridge 网络；仅在授权测试确实需要反向连接时，才在「设置 → 环境」显式切换到 host 网络。
 
 控制台的 Release 资产：`sentinel-web-linux-x64.tar.gz`、`sentinel-web-linux-arm64.tar.gz`、`sentinel-web-darwin-arm64.tar.gz`、`sentinel-web-darwin-x64.tar.gz`、`sentinel-web-windows-x64.zip`、`sentinel-web-windows-x64.exe`（仅为控制台，不含容器二进制），另有 DroidBridge APK。四个 tar.gz 与 Windows 的 zip 都带 `replayd/`（linux amd64/arm64），供容器内发包重放使用。
 
@@ -204,13 +204,13 @@ cd MITM_Fuzz_Render && make dist   # 产出 dist/replayd_linux_{amd64,arm64}
 
 ## 安全边界
 
-**控制台**：Docker 是硬依赖。每个项目一个 Kali 容器（`sentinel:latest`），Agent 的 bash 命令**在容器内执行**（`docker exec`），项目目录 bind mount 进 `/work`，容器**以 root 运行**。容器网络默认 **host**（容器直接用宿主机网络栈，反向 shell、payload 服务、本地靶场、内网与 VPN 才是真实的），可在「设置 → 环境 → 容器网络」切到 **bridge**；两种模式都保留 `NET_RAW`，`NET_ADMIN` 只在 bridge 模式授予。Docker 检查有阻断项时控制台拒绝 `prompt`、`compact` 与持续目标。
+**控制台**：Docker 是硬依赖。每个项目一个 Kali 容器（`sentinel:latest`），Agent 的 bash 命令**在容器内执行**（`docker exec`），项目目录 bind mount 进 `/work`，容器**以 root 运行**。容器网络默认 **bridge**（Docker 网络隔离）；只有授权测试确实需要反向 shell 或宿主机网络时，才在「设置 → 环境 → 容器网络」显式切到 **host**（共享宿主机网络栈）；两种模式都保留 `NET_RAW`，`NET_ADMIN` 只在 bridge 模式授予。Docker 检查有阻断项时控制台拒绝 `prompt`、`compact` 与持续目标。
 
 **但容器只约束命令，不是整体沙箱**：控制台与 Agent 进程本身以启动者的用户身份跑在宿主机上，只有命令进容器。
 
 - 审批链只覆盖 bash、安卓 shell（`droid_shell`）与 iOS shell（`ios_shell`），子代理的 bash 走同一条链；**read/edit/write、文件面板、MCP 工具、codemode，以及 frida、抓包、APK 分析等直接调用容器的工具都不过门**。工程任务的 bash 另有一套正则黑名单、20 秒超时与 40 条预算，同样不走审批门。
 - `read/edit/write` 直接读写宿主机文件系统，项目目录只是相对路径的基准，绝对路径不受限制；MCP 的 stdio 服务器是宿主机子进程。
-- AI 审批（守门模型）只判六类破坏性操作，判定失败、超时或无法解析一律放行（fail-open），**不是沙箱、也不做数据防泄漏**。
+- AI 审批（守门模型）只判六类破坏性操作，判定失败、超时或无法解析一律阻止本次调用（fail-closed），**不是沙箱、也不做数据防泄漏**。
 - 容器以 root 运行，没有资源上限，也没有 cap-drop / seccomp / read-only；同一项目的所有会话与并发任务共用一个容器。
 - 控制台会加载项目目录下的 `settings.json`、`.pi/extensions`、`AGENTS.md`，且没有项目信任确认步骤——不要把来源不可信的工作目录设为项目。MCP 服务器不在此列：它们只来自「设置 → MCP」，项目目录里的 `.pi/mcp.json` 与配置目录里的 `mcp.json` 都不读。
 - **自定义 MCP 的 stdio 服务器在控制台宿主机上直接执行**：不在容器内，也不经过 bash 审批与守门模型，因此必须逐条勾选风险确认才能保存。需要 OAuth 登录的 HTTP 服务器请在终端执行 `sentinel mcp login`。
