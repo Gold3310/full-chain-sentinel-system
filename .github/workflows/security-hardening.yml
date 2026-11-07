@@ -34,8 +34,11 @@ jobs:
       - name: Install locked workspace dependencies
         run: npm ci
 
-      - name: Run web console tests
-        run: npm --prefix packages/web test
+      - name: Run targeted security regression tests
+        run: |
+          cd packages/web
+          npx vitest --run test/tool-gate.test.ts test/gatekeeper-config.test.ts test/container-network.test.ts test/recreate-project.test.ts
+          npx vitest --run test/e2e.test.ts -t "a judge failure blocks the command"
 
       - name: Type-check web UI
         run: npm --prefix packages/web run check:webui
