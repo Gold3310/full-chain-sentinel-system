@@ -2240,7 +2240,7 @@ test("a compaction that stalls is visible, refuses prompts in Chinese, and can b
  *
  * The judge is the same fake endpoint, recognized by its system prompt, so a
  * test can steer the verdict per command. Every scenario below runs exactly one
- * bash command through the real gate: allow, block, and fail-open.
+ * bash command through the real gate: allow, block, and fail-closed.
  */
 
 /**
@@ -2418,15 +2418,16 @@ test("a blocked command never runs, the reason reaches the model, and the block 
 	expect(settled.gatekeeper.lastSuccessAt ?? 0).toBeGreaterThan(settled.gatekeeper.lastFailureAt ?? 0);
 });
 
-test("a judge failure is allowed through, recorded as 请求失败, and surfaces as fail-open", async () => {
+test("a judge failure blocks the command, records 请求失败, and surfaces as fail-closed", async () => {
 	judgeBehavior = { kind: "error" };
 	judgedCommands.length = 0;
 	drainIncoming();
 	send({ type: "prompt", text: GATE_FAIL_PROMPT });
 	const settled = await snapshotWhereFirst(
-		(snapshot) => !snapshot.streaming && toolResultText(snapshot).includes(GATE_FAILED_OUTPUT),
+		(snapshot) => !snapshot.streaming && toolResultText(snapshot).includes("fail-closed"),
 	);
-	// Fail-open: the command ran even though no verdict came back.
+	// Fail-closed: the command output marker must never appear without an ALLOW verdict.
+	expect(toolResultText(settled)).not.toContain(GATE_FAILED_OUTPUT);
 	expect(settled.gatekeeper.failures).toBeGreaterThan(0);
 	expect(settled.gatekeeper.lastError).toContain("500");
 	// Newer failure than success is what raises the console's yellow banner.
